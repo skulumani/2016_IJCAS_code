@@ -5,12 +5,16 @@ clear all
 
 addpath(genpath('./utilities'));
 
-fontsize = 18;
+textwidth_pt = 483.0;
+wscale = 0.333;
+pt2in = 1 / 72.27;
+
+fontsize = 10;
 fontname = 'Times';
-figx = 680;
-figy = 224;
-figw = 800;
-figh = 600;
+figx = 3;
+figy = 3;
+figw = textwidth_pt * wscale * pt2in;
+figh = figw * (sqrt(5) - 1)/2;
 
 fig_size = [figx,figy,figw,figh];
 
@@ -75,7 +79,7 @@ end
 g = 1+-1/alpha*log(-(angle-con_angle)/(1+con_angle));
 eRB = abs(1/alpha*sin(acos(angle))./(angle-con_angle)); % norm of eRB
 
-figure('Position',fig_size)
+figure()
 plot(acos(angle)*180/pi, real(g))
 xlabel('Angle to constraint','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 ylabel('Barrier','interpreter','latex','FontName',fontname,'FontSize',fontsize)
@@ -85,7 +89,7 @@ hold all
 plot(acos(angle)*180/pi,eRB)
 set(gca,'FontName',fontname,'FontSize',fontsize);
 
-figure('Position',fig_size)
+figure()
 hold all
 grid on
 title('Sensor Inertial Pointing Direction','interpreter','latex','FontName',fontname,'FontSize',fontsize)
@@ -97,43 +101,47 @@ ylabel('Y','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 zlabel('Z','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 set(gca,'FontName',fontname,'FontSize',fontsize);
 
-figure('Position',fig_size)
+avoid_fig = figure('Units', 'inches', 'Position',fig_size);
 hold all
 grid on
 title('Avoid','interpreter','latex','FontName',fontname,'FontSize',fontsize)
-xlabel('Longitude ($\lambda$)','interpreter','latex','FontName',fontname,'FontSize',fontsize)
-ylabel('Latitude ($\beta$)','interpreter','latex','FontName',fontname,'FontSize',fontsize)
+xlabel('$\lambda$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
+ylabel('$\beta$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 zlabel('$B(R)$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
+xticks([-180, 0 , 180])
+xticklabels({'$-\pi$', '$0$', '$\pi$'})
+yticks([-90, 0, 90])
+yticklabels({'$-\frac{\pi}{2}$', '$0$', '$\frac{\pi}{2}$'})
 surf(X.*180/pi,Y.*180/pi,(psi_avoid_array),'EdgeColor','none')
 caxis([1 2])
 axis([-180 180 -90 90 0 3])
 view(3)
-set(gca,'FontName',fontname,'FontSize',fontsize);
+set(gca,'FontName',fontname,'FontSize',fontsize, 'TickLabelInterpreter', 'latex');
+print(avoid_fig, 'avoid_error.eps','-depsc')
 
-
-figure('Position',fig_size)
+figure('Units', 'inches', 'Position',fig_size)
 hold all
 grid on
 title('Attract','interpreter','latex','FontName',fontname,'FontSize',fontsize)
-xlabel('Longitude ($\lambda$)','interpreter','latex','FontName',fontname,'FontSize',fontsize)
-ylabel('Latitude ($\beta$)','interpreter','latex','FontName',fontname,'FontSize',fontsize)
+xlabel('$\lambda$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
+ylabel('$\beta$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 zlabel('$A(R)$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 surf(X.*180/pi,Y.*180/pi,psi_attract_array,'EdgeColor','none')
 caxis([0 2])
 axis([-180 180 -90 90 0 3])
 view(3)
-set(gca,'FontName',fontname,'FontSize',fontsize);
+set(gca,'FontName',fontname,'FontSize',fontsize, 'TickLabelInterpreter', 'latex');
 
 
-figure('Position',fig_size)
+figure('Units', 'inches', 'Position',fig_size)
 hold all
 grid on
 title('Total','interpreter','latex','FontName',fontname,'FontSize',fontsize)
-xlabel('Longitude ($\lambda$)','interpreter','latex','FontName',fontname,'FontSize',fontsize)
-ylabel('Latitude ($\beta$)','interpreter','latex','FontName',fontname,'FontSize',fontsize)
+xlabel('$\lambda$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
+ylabel('$\beta$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 zlabel('$\Psi(R)$','interpreter','latex','FontName',fontname,'FontSize',fontsize)
 surf(X.*180/pi,Y.*180/pi,psi_total_array,'EdgeColor','none')
 caxis([0 2])
 axis([-180 180 -90 90 0 3])
 view(3)
-set(gca,'FontName',fontname,'FontSize',fontsize);
+set(gca,'FontName',fontname,'FontSize',fontsize, 'TickLabelInterpreter', 'latex');
