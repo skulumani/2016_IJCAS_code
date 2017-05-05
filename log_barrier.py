@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib 
+import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib import colors, animation, cm
 from mpl_toolkits.mplot3d import Axes3D
@@ -60,7 +61,7 @@ R_des = np.eye(3,3)
 G = np.diag([0.9, 1.0, 1.1])
 
 # cylindrical projection of 2-Sphere
-den = 50
+den = 300
 lon = np.linspace(-180, 180, den) * np.pi/180
 lat = np.linspace(-90, 90, den) * np.pi/180
 
@@ -86,7 +87,7 @@ for ii in range(lon.shape[0]):
         if np.dot(sen_inertial, con) < con_angle:
             psi_avoid = -1 / alpha * np.log(- (np.dot(sen_inertial, con) - con_angle) / (1 + con_angle)) + 1
         else:
-            psi_avoid = 3
+            psi_avoid = 11
 
         psi_total = psi_attract * psi_avoid
 
@@ -101,22 +102,72 @@ for ii in range(lon.shape[0]):
 g = 1 + -1/alpha * np.log(- (angle - con_angle) / (1+con_angle))
 eRB = np.absolute(1 / alpha * np.sin(np.arccos(angle)) / (angle - con_angle))
 
-# Log barrier function plot
-lb_fig, lb_ax = plt.subplots(1, 1, figsize=figsize(1))
-lb_ax.plot(np.arccos(angle) * 180/np.pi, np.real(g), label='Barrier Function')
-lb_ax.plot(np.arccos(angle) * 180/np.pi, eRB, label=r'$e_{R_B}$')
-lb_ax.set_xlabel('Angle to Constraint')
-lb_ax.set_ylabel('Error Function')
-lb_ax.set_title('Logarithmic Barrier Function')
+# make sure nothing is plotted beyond the range of our plot
+psi_avoid_array[psi_avoid_array > 3] = 3
+psi_attract_array[psi_attract_array > 3] = 3
+psi_total_array[psi_total_array > 3] = 3
 
-# Error function surface visualization
-fwidth = 1
-avoid_fig, avoid_ax = plt.subplots(1, 1, figsize=figsize(fwidth))
-avoid_ax = Axes3D(avoid_fig)
-avoid_ax.plot_surface(X * 180/np.pi, Y * 180/np.pi, psi_avoid_array)
-avoid_ax.set_xlim(-180, 180)
-avoid_ax.set_ylim(-90, 90)
-avoid_ax.set_zlim(0, 3)
-plt.show()
+def plot_error_function(fwidth=1, pgf_save=False):
+    # Log barrier function plot
+    lb_fig, lb_ax = plt.subplots(1, 1, figsize=figsize(1))
+    lb_ax.plot(np.arccos(angle) * 180/np.pi, np.real(g), label='Barrier Function')
+    lb_ax.plot(np.arccos(angle) * 180/np.pi, eRB, label=r'$e_{R_B}$')
+    lb_ax.set_xlabel('Angle to Constraint')
+    lb_ax.set_ylabel('Error Function')
+    lb_ax.set_title('Logarithmic Barrier Function')
 
+    # Error function surface visualization
+    vmin=0
+    vmax=2
+    cmap = 'Blues'
+    with sns.axes_style('white', pgf_with_latex):
+        avoid_fig, avoid_ax = plt.subplots(1, 1, figsize=figsize(fwidth))
+        avoid_ax = Axes3D(avoid_fig)
+        avoid_ax.plot_surface(X * 180/np.pi, Y * 180/np.pi, psi_avoid_array, vmin=vmin, vmax=vmax, cmap=cmap)
+        avoid_ax.set_xlim(-180, 180)
+        avoid_ax.set_ylim(-90, 90)
+        avoid_ax.set_zlim(0, 3)
+
+        avoid_ax.set_xlabel(r'$\lambda$')
+        avoid_ax.set_ylabel(r'$\beta$')
+        avoid_ax.set_zlabel(r'$B(R)$')
+
+        attract_fig, attract_ax = plt.subplots(1, 1, figsize=figsize(fwidth))
+        attract_ax = Axes3D(attract_fig)
+        attract_ax.plot_surface(X * 180/np.pi, Y * 180/np.pi, psi_attract_array, vmin=vmin, vmax=vmax, cmap=cmap)
+
+        attract_ax.set_xlim(-180, 180)
+        attract_ax.set_ylim(-90, 90)
+        attract_ax.set_zlim(0, 3)
+
+        attract_ax.set_xlabel(r'$\lambda$')
+        attract_ax.set_ylabel(r'$\beta$')
+        attract_ax.set_zlabel(r'$A(R)$')
+
+        total_fig, total_ax = plt.subplots(1, 1, figsize=figsize(fwidth))
+        total_ax = Axes3D(total_fig)
+        total_ax.plot_surface(X * 180/np.pi, Y * 180/np.pi, psi_total_array, vmin=vmin, vmax=vmax, cmap=cmap)
+
+        total_ax.set_xlim(-180, 180)
+        total_ax.set_ylim(-90, 90)
+        total_ax.set_zlim(0, 3)
+
+        total_ax.set_xlabel(r'$\lambda$')
+        total_ax.set_ylabel(r'$\beta$')
+        total_ax.set_zlabel(r'$\Psi(R)$')
+
+    # save the figures as pgf if the flag is set
+    if pgf_save:
+        fig_handles = (attract_fig, avoid_fig, total_fig)
+        fig_fnames = ('attract_error', 'avoid_error', 'combined_error')
+
+        for fig, fname in zip(fig_handles, fig_fnames):
+            plt.figure(fig.number)
+            plt.savefig(fname + '.pgf')
+            plt.savefig(fname + '.pdf')
+    plt.show()
+
+if __name__ == '__main__':
+    # parse parameters to see if we should save
+    plot_error_function(fwidth=1,pgf_save=False)
 
