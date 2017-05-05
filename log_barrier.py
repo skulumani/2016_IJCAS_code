@@ -33,12 +33,13 @@ pgf_with_latex = {                      # setup matplotlib to use latex for outp
         "font.serif": [],                   # blank entries should cause plots to inherit fonts from the document
         "font.sans-serif": [],
         "font.monospace": [],
-        "axes.labelsize": 10,               # LaTeX default is 10pt font.
-        "font.size": 10,
-        "legend.fontsize": 10,               # Make the legend/label fonts a little smaller
-        "xtick.labelsize": 10,
-        "ytick.labelsize": 10,
+        "axes.labelsize": 8,               # LaTeX default is 10pt font.
+        "font.size": 8,
+        "legend.fontsize": 8,               # Make the legend/label fonts a little smaller
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
         "figure.figsize": figsize(0.9),     # default fig size of 0.9 textwidth
+        "figure.autolayout": True,
         "pgf.preamble": [
             r"\usepackage[utf8x]{inputenc}",    # use utf8 fonts becasue your computer can handle it :)
             r"\usepackage[T1]{fontenc}",        # plots will be generated using this preamble
@@ -123,6 +124,7 @@ def plot_error_function(fwidth=1, pgf_save=False):
     with sns.axes_style('white', pgf_with_latex):
         avoid_fig, avoid_ax = plt.subplots(1, 1, figsize=figsize(fwidth))
         avoid_ax = Axes3D(avoid_fig)
+        avoid_ax.set_axis_off()
         avoid_ax.plot_surface(X * 180/np.pi, Y * 180/np.pi, psi_avoid_array, vmin=vmin, vmax=vmax, cmap=cmap)
         avoid_ax.set_xlim(-180, 180)
         avoid_ax.set_ylim(-90, 90)
@@ -134,6 +136,7 @@ def plot_error_function(fwidth=1, pgf_save=False):
 
         attract_fig, attract_ax = plt.subplots(1, 1, figsize=figsize(fwidth))
         attract_ax = Axes3D(attract_fig)
+        attract_ax.set_axis_off()
         attract_ax.plot_surface(X * 180/np.pi, Y * 180/np.pi, psi_attract_array, vmin=vmin, vmax=vmax, cmap=cmap)
 
         attract_ax.set_xlim(-180, 180)
@@ -146,6 +149,7 @@ def plot_error_function(fwidth=1, pgf_save=False):
 
         total_fig, total_ax = plt.subplots(1, 1, figsize=figsize(fwidth))
         total_ax = Axes3D(total_fig)
+        total_ax.set_axis_off()
         total_ax.plot_surface(X * 180/np.pi, Y * 180/np.pi, psi_total_array, vmin=vmin, vmax=vmax, cmap=cmap)
 
         total_ax.set_xlim(-180, 180)

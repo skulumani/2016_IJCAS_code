@@ -3,10 +3,9 @@ Matlab code for ACC paper
 ## To regenerate the figures for publications
 
 ### Configuration Error Function visualization:
-run log_barrier.m to make the surface plots for the \Psi
-
-Go to commit 21e53de0fb288911a5dd5306fddb1f8a9d6d5a8d to make sure the constants
-are setup properly
+The script `log_barrier.py` will regenerate the surface plots.
+The function `log_barrier.plot_error_function(fwidth=0.333, pgf_save=True)` can be used
+to scale the output figures and export them to PDF automatically.
 
 ### Attitude Stabilization without adaptive update law:
 run coupled_control_driver.m and then run plot_outputs.m to generate the simulation
