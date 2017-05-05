@@ -1,0 +1,195 @@
+"""Spacecraft rigid body class
+
+"""
+import numpy as np
+
+from kinematics import attitude
+
+class SpaceCraft(object):
+
+    def __init__(self, scenario='multiple'):
+        """Initialize the model and it's properties
+        """
+        self.m_sc = 1
+        self.J = np.array( [[55710.50413e-7, 617.6577e-7, -250.2846e-7],
+                       [617.6577e-7, 55757.4605e-7, 100.6760e-7],
+                       [-250.2846e-7, 100.6760e-7, 105053.7595e-7]])
+        
+        self.G = np.diag([0.9, 1.0, 1.1])
+
+        self.kp = 0.4
+        self.kv = 0.296
+
+        # logic to change the constraints 
+        if scenario == 'multiple':
+            self.con = np.array([[0.174, 0.4, -0.853, -0.122],
+                            [-0.934, 0.7071, 0.436, -0.140],
+                            [-0.034, 0.7071, -0.286, -0.983]])
+            self.con_angle = np.array([40, 40, 40, 20])*np.pi/180
+        elif scenario == 'single':
+            self.con = np.array([ 1/np.sqrt(2), 1/np.sqrt(2), 0])
+            self.con_angle = 12 * np.pi/180
+
+        self.con = self.con / np.linalg.norm(self.con, axis=0)
+
+        self.alpha = 15
+        self.num_con = self.con.shape[1]
+
+        # Adaptive control paramters
+        self.W = np.eye(3,3)
+        self.delta = lambda t: np.array([np.sin(9 * t), np.cos(9 * t), 1/2*(np.sin(9*t) + np.cos(9*t))])
+        self.kd = 0.5
+        self.c = 1
+
+        # desired/initial conditions
+        self.q0 = np.array([-0.188, -0.735, -0.450, -0.471]) 
+        self.qd = np.array([0, 0, 0, 1])
+
+        if scenario == 'multiple':
+            self.R0 = attitude.rot1(0).dot(attitude.rot3(225 * np.pi/180))
+            self.Rd = np.eye(3,3)
+        elif scenario == 'single':
+            self.R0 = attitude.rot1(0).dot(attitude.rot3(0))
+            self.Rd = attitude.rot3(90*np.pi/180)
+
+        # define the initial state
+        self.w0 = np.zeros(3)
+        self.delta_est0 = np.zeros(3)
+        self.initial_state = np.hstack((self.R0.reshape(9), self.w0, self.delta_est0))
+
+        self.tspan = np.linspace(0, 20, 1e3)
+
+    def dynamics(self, t, state):
+        """EOMs for the attitude dynamics of a rigid body
+
+        """
+        m_sc = self.m_sc
+        J = self.J
+        kd = self.kd
+        W = self.W
+
+        R = state[0:9].reshape((3,3))
+        ang_vel = state[9:12]
+        delta_est = state[12:15]
+
+        # determine the external force and moment
+        (_, m) = self.ext_force_moment(t, state)
+
+        # compute control input
+        (_, u_m, _, _, _, _, err_att, err_vel) = self.controller(t, state)
+
+        # differential equations
+        R_dot = R.dot(attitude.hat_map(ang_vel))
+        ang_vel_dot = np.linalg.inv(J).dot(m + u_m - attitude.hat_map(ang_vel).dot(J.dot(ang_vel)))
+        theta_est_dot = kd * W.T.dot(err_vel + self.c * err_att)
+
+        state_dot = np.hstack((R_dot.reshape(9), ang_vel_dot, theta_est_dot))
+
+    def ext_force_moment(self, t, state):
+        """External moment on the spacecraft
+
+        """
+
+        R = state[0:9].reshape((3,3))
+        ang_vel = state[9:12]
+
+        m_sc = self.m_sc
+        J = self.J
+        W = self.W
+        delta = self.delta 
+
+        # external force
+        f = np.zeros(3)
+
+        if dist_switch:
+            m = W.dot(delta)
+        else:
+            m = np.zeros(3)
+
+        return (f, m)
+
+    def controller(self, t, state):
+        """Controller for SO(3) avoidance
+        """
+        R = state[0:9].reshape((3,3))
+        ang_vel = state[9:12]
+        delta_est = state[12:15]
+
+        # extract out the object parameters
+        J = self.J
+        G = self.G
+        kp = self.kp
+        kv = self.kv
+        sen = self.sen
+        alpha = self.alpha
+        con_angle = self.con_angle
+        con = self.con
+        W = self.W
+        num_con = self.num_con
+
+        (R_des, ang_vel_des, ang_vel_dot_des) = des_attitude(t)
+
+        psi_attract = 1/2*np.trace(G.dot(np.eye(3,3) - R_des.T.dot(R)))
+        dA = 1/2*attitude.vee_map(G.dot(R_des.T).dot(R) - R.T.dot(R_des).dot(G))
+
+        if avoid_switch:
+            # use the constraint avoidance term
+            sen_inertial = R.dot(sen)
+
+            psi_avoid = np.zeros(self.num_con)
+            dB = np.zeros(3,num_con)
+
+            for ii in range(num_con):
+                c = np.squeeze(con[:,ii])
+                a = con_angle[ii]
+                psi_avoid[ii] = -1 / alpha * np.log((np.cos(a)-np.inner(sen_inertial, c))/ (1 + np.cos(a)))
+                dB[ii] = 1/alpha/( np.inner(sen_inertial, c) - np.cos(a)*attitude.hat_map(R.T.dot(c)).dot(sen))
+
+            Psi = psi_attract * (np.sum(psi_avoid) + 1)
+            err_att = dA * (np.sum(psi_avoid) + 1) + np.sum(dB * psi_attract, axis=1)
+        else:
+            err_att = dA
+            Psi = psi_attract
+        
+        err_vel = ang_vel - R.T.dot(R_des).dot(ang_vel_des)
+        alpha_d = -attitude.hat_map(ang_vel).dot(R.T).dot(R_des).dot(ang_vel_des) + R.T.dot(R_des).dot(ang_vel_dot_des)
+
+        # compute the control input
+        u_f = np.zeros(3)
+        
+        if adaptive_switch:
+            u_m = -kp * err_att - kv * err_vel + np.cross(ang_vel, J.dot(ang_vel)) - W.dot(delta_est)
+        else:
+            u_m = -kp * err_att - kv * err_vel + np.cross(ang_vel, J.dot(ang_vel))
+
+        return (u_f, u_m, R_des, ang_vel_des, ang_vel_dot_des, Psi, err_att, err_vel)
+
+    def des_attitude(self, t):
+        """Define the desired attitude for the simulation
+        """
+        a  = 2*np.pi/(20/10)
+        b = np.pi/9
+
+        phi = b*np.sin(a*t)
+        theta = b*np.cos(a*t)
+        psi = 0
+
+        phi_d = b*a*np.cos(a*t)
+        theta_d = -b*a*np.sin(a*t)
+        psi_d = 0
+
+        phi_dd = -b*a**2*np.sin(a*t)
+        theta_dd = -b*a**2*np.cos(a*t)
+        psi_dd = 0
+
+        R_des = self.Rd
+
+        ang_vel_des = np.zeros(3)
+
+        ang_vel_dot_des = np.zeros(3)
+
+        return (R_des, ang_vel_des, ang_vel_dot_des)
+
+
+
+
