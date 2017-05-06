@@ -2,7 +2,8 @@
 
 """
 import numpy as np
-
+from scipy import integrate
+import pdb
 from kinematics import attitude
 
 class SpaceCraft(object):
@@ -59,7 +60,7 @@ class SpaceCraft(object):
 
         self.tspan = np.linspace(0, 20, 1e3)
 
-    def dynamics(self, t, state):
+    def dynamics(self, state, t):
         """EOMs for the attitude dynamics of a rigid body
 
         """
@@ -67,7 +68,7 @@ class SpaceCraft(object):
         J = self.J
         kd = self.kd
         W = self.W
-
+        pdb.set_trace() 
         R = state[0:9].reshape((3,3))
         ang_vel = state[9:12]
         delta_est = state[12:15]
@@ -84,7 +85,8 @@ class SpaceCraft(object):
         theta_est_dot = kd * W.T.dot(err_vel + self.c * err_att)
 
         state_dot = np.hstack((R_dot.reshape(9), ang_vel_dot, theta_est_dot))
-
+        
+        return state_dot
     def ext_force_moment(self, t, state):
         """External moment on the spacecraft
 
@@ -190,6 +192,12 @@ class SpaceCraft(object):
 
         return (R_des, ang_vel_des, ang_vel_dot_des)
 
+    def integrate(self, tf):
+
+        self.time = np.linspace(0, tf, 1e3)
+        self.state = integrate.odeint(self.dynamics, self.initial_state, self.time)
+
+        return 0
 
 
 

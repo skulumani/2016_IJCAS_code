@@ -27,3 +27,6 @@ class TestSpaceCraft():
         _, _, ang_vel_dot_des = self.sc.des_attitude(0)
         np.testing.assert_equal(ang_vel_dot_des.shape, (3,))
 
+    def test_integration_state_output_size(self):
+        self.sc.integrate(10)
+        np.testing.assert_equal(self.sc.state.shape, (1e3, 15)) 
