@@ -8,7 +8,12 @@ from kinematics import attitude
 
 class SpaceCraft(object):
 
-    def __init__(self, scenario='multiple'):
+    def __init__(
+            self, 
+            scenario='multiple', 
+            dist_switch=False, 
+            avoid_switch=False, 
+            adaptive_switch=False):
         """Initialize the model and it's properties
         """
         self.m_sc = 1
@@ -20,8 +25,14 @@ class SpaceCraft(object):
 
         self.kp = 0.4
         self.kv = 0.296
+        
+        self.sen = np.array([1, 0, 0])
 
         # logic to change the constraints 
+        self.scenario = scenario
+        self.dist_switch = dist_switch
+        self.avoid_switch = avoid_switch
+        self.adaptive_switch = adaptive_switch
         if scenario == 'multiple':
             self.con = np.array([[0.174, 0.4, -0.853, -0.122],
                             [-0.934, 0.7071, 0.436, -0.140],
@@ -68,7 +79,7 @@ class SpaceCraft(object):
         J = self.J
         kd = self.kd
         W = self.W
-        pdb.set_trace() 
+
         R = state[0:9].reshape((3,3))
         ang_vel = state[9:12]
         delta_est = state[12:15]
@@ -103,68 +114,12 @@ class SpaceCraft(object):
         # external force
         f = np.zeros(3)
 
-        if dist_switch:
+        if self.dist_switch:
             m = W.dot(delta)
         else:
             m = np.zeros(3)
 
         return (f, m)
-
-    def controller(self, t, state):
-        """Controller for SO(3) avoidance
-        """
-        R = state[0:9].reshape((3,3))
-        ang_vel = state[9:12]
-        delta_est = state[12:15]
-
-        # extract out the object parameters
-        J = self.J
-        G = self.G
-        kp = self.kp
-        kv = self.kv
-        sen = self.sen
-        alpha = self.alpha
-        con_angle = self.con_angle
-        con = self.con
-        W = self.W
-        num_con = self.num_con
-
-        (R_des, ang_vel_des, ang_vel_dot_des) = des_attitude(t)
-
-        psi_attract = 1/2*np.trace(G.dot(np.eye(3,3) - R_des.T.dot(R)))
-        dA = 1/2*attitude.vee_map(G.dot(R_des.T).dot(R) - R.T.dot(R_des).dot(G))
-
-        if avoid_switch:
-            # use the constraint avoidance term
-            sen_inertial = R.dot(sen)
-
-            psi_avoid = np.zeros(self.num_con)
-            dB = np.zeros(3,num_con)
-
-            for ii in range(num_con):
-                c = np.squeeze(con[:,ii])
-                a = con_angle[ii]
-                psi_avoid[ii] = -1 / alpha * np.log((np.cos(a)-np.inner(sen_inertial, c))/ (1 + np.cos(a)))
-                dB[ii] = 1/alpha/( np.inner(sen_inertial, c) - np.cos(a)*attitude.hat_map(R.T.dot(c)).dot(sen))
-
-            Psi = psi_attract * (np.sum(psi_avoid) + 1)
-            err_att = dA * (np.sum(psi_avoid) + 1) + np.sum(dB * psi_attract, axis=1)
-        else:
-            err_att = dA
-            Psi = psi_attract
-        
-        err_vel = ang_vel - R.T.dot(R_des).dot(ang_vel_des)
-        alpha_d = -attitude.hat_map(ang_vel).dot(R.T).dot(R_des).dot(ang_vel_des) + R.T.dot(R_des).dot(ang_vel_dot_des)
-
-        # compute the control input
-        u_f = np.zeros(3)
-        
-        if adaptive_switch:
-            u_m = -kp * err_att - kv * err_vel + np.cross(ang_vel, J.dot(ang_vel)) - W.dot(delta_est)
-        else:
-            u_m = -kp * err_att - kv * err_vel + np.cross(ang_vel, J.dot(ang_vel))
-
-        return (u_f, u_m, R_des, ang_vel_des, ang_vel_dot_des, Psi, err_att, err_vel)
 
     def des_attitude(self, t):
         """Define the desired attitude for the simulation
@@ -191,11 +146,95 @@ class SpaceCraft(object):
         ang_vel_dot_des = np.zeros(3)
 
         return (R_des, ang_vel_des, ang_vel_dot_des)
+    def controller(self, t, state):
+        """Controller for SO(3) avoidance
+        """
+        R = state[0:9].reshape((3,3))
+        ang_vel = state[9:12]
+        delta_est = state[12:15]
+
+        # extract out the object parameters
+        J = self.J
+        G = self.G
+        kp = self.kp
+        kv = self.kv
+        sen = self.sen
+        alpha = self.alpha
+        con_angle = self.con_angle
+        con = self.con
+        W = self.W
+        num_con = self.num_con
+
+        (R_des, ang_vel_des, ang_vel_dot_des) = self.des_attitude(t)
+
+        psi_attract = 1/2*np.trace(G.dot(np.eye(3,3) - R_des.T.dot(R)))
+        dA = 1/2*attitude.vee_map(G.dot(R_des.T).dot(R) - R.T.dot(R_des).dot(G))
+
+        if self.avoid_switch:
+            # use the constraint avoidance term
+            sen_inertial = R.dot(sen)
+
+            psi_avoid = np.zeros(self.num_con)
+            dB = np.zeros(3,num_con)
+
+            for ii in range(num_con):
+                c = np.squeeze(con[:,ii])
+                a = con_angle[ii]
+                psi_avoid[ii] = -1 / alpha * np.log((np.cos(a)-np.inner(sen_inertial, c))/ (1 + np.cos(a)))
+                dB[ii] = 1/alpha/( np.inner(sen_inertial, c) - np.cos(a)*attitude.hat_map(R.T.dot(c)).dot(sen))
+
+            Psi = psi_attract * (np.sum(psi_avoid) + 1)
+            err_att = dA * (np.sum(psi_avoid) + 1) + np.sum(dB * psi_attract, axis=1)
+        else:
+            err_att = dA
+            Psi = psi_attract
+        
+        err_vel = ang_vel - R.T.dot(R_des).dot(ang_vel_des)
+        alpha_d = -attitude.hat_map(ang_vel).dot(R.T).dot(R_des).dot(ang_vel_des) + R.T.dot(R_des).dot(ang_vel_dot_des)
+
+        # compute the control input
+        u_f = np.zeros(3)
+        
+        if self.adaptive_switch:
+            u_m = -kp * err_att - kv * err_vel + np.cross(ang_vel, J.dot(ang_vel)) - W.dot(delta_est)
+        else:
+            u_m = -kp * err_att - kv * err_vel + np.cross(ang_vel, J.dot(ang_vel))
+
+        return (u_f, u_m, R_des, ang_vel_des, ang_vel_dot_des, Psi, err_att, err_vel)
+
 
     def integrate(self, tf):
+        """Simulate the rigid body for the selected period of time
 
-        self.time = np.linspace(0, tf, 1e3)
+        Also compute and save the control parameters by passing them through the controller
+        and saving it to the object
+
+        """
+        num_steps = 1e3
+        self.time = np.linspace(0, tf, num_steps)
         self.state = integrate.odeint(self.dynamics, self.initial_state, self.time)
+
+        # compute all the controller paramters again
+        self.u_f = np.zeros((num_steps, 3))
+        self.u_m = np.zeros_like(self.u_f)
+        self.R_des = np.zeros((num_steps, 9))
+        self.ang_vel_des = np.zeros_like(self.u_f)
+        self.ang_vel_dot_des = np.zeros_like(self.u_f)
+        self.Psi = np.zeros_like(self.time)
+        self.err_att = np.zeros_like(self.u_f)
+        self.err_vel = np.zeros_like(self.u_f)
+
+        for ii, (t, state) in enumerate(zip(self.time, self.state)):
+            (u_f, u_m, R_des, ang_vel_des, ang_vel_dot_des, Psi, err_att, err_vel) = self.controller(t, state)
+
+            self.u_f[ii, :] = u_f
+            self.u_m[ii, :] = u_m
+            self.R_des[ii, :] = R_des.reshape(9)
+            self.ang_vel_des[ii, :] = ang_vel_des
+            self.ang_vel_dot_des[ii, :] = ang_vel_dot_des
+            self.Psi[ii] = Psi
+            self.err_att[ii, :] = err_att
+            self.err_vel[ii, :] = err_vel
 
         return 0
 
