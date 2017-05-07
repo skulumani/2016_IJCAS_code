@@ -224,8 +224,17 @@ class SpaceCraft(object):
         self.err_att = np.zeros_like(self.u_f)
         self.err_vel = np.zeros_like(self.u_f)
 
+        self.sen_inertial = np.zeros_like(self.u_f)
+        self.ang_con = np.zeros((num_steps, self.num_con))
+
         for ii, (t, state) in enumerate(zip(self.time, self.state)):
             (u_f, u_m, R_des, ang_vel_des, ang_vel_dot_des, Psi, err_att, err_vel) = self.controller(t, state)
+
+            # compute the angle to each constraint
+            self.sen_inertial[ii, :] = state[0:9].reshape((3,3)).dot(self.sen).reshape((1,3))
+            for jj in range(self.num_con):
+                c = self.con[:, jj]
+                self.ang_con[ii, jj] = 180/np.pi * np.arccos(np.dot(self.sen_inertial[ii,:], c))
 
             self.u_f[ii, :] = u_f
             self.u_m[ii, :] = u_m
