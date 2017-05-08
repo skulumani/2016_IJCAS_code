@@ -216,7 +216,7 @@ class SpaceCraft(object):
         and saving it to the object
 
         """
-        num_steps = 1e3
+        num_steps = int(1e3)
         self.time = np.linspace(0, tf, num_steps)
         self.state = integrate.odeint(self.dynamics, self.initial_state, self.time)
 
