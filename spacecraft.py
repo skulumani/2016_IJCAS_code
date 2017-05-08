@@ -41,21 +41,21 @@ class SpaceCraft(object):
                             [-0.934, 0.7071, 0.436, -0.140],
                             [-0.034, 0.7071, -0.286, -0.983]])
             self.con_angle = np.array([40, 40, 40, 20])*np.pi/180
+            self.num_con = self.con.shape[1]
         elif scenario == 'single':
             self.con = np.array([ 1/np.sqrt(2), 1/np.sqrt(2), 0])
             self.con_angle = 12 * np.pi/180
-
+            self.num_con = 1
         self.con = self.con / np.linalg.norm(self.con, axis=0)
 
         self.alpha = 15
-        self.num_con = self.con.shape[1]
 
         # Adaptive control paramters
         self.W = np.eye(3,3)
         if time_varying_switch:
-            self.delta = lambda t: np.array([np.sin(9 * t), np.cos(9 * t), 1/2*(np.sin(9*t) + np.cos(9*t))])
+            self.delta = lambda t: 0.2+0.02*np.array([np.sin(9 * t), np.cos(9 * t), 1/2*(np.sin(9*t) + np.cos(9*t))])
         else:
-            self.delta = np.array([0.2, 0.2, 0.2])
+            self.delta = lambda t: np.array([0.2, 0.2, 0.2])
 
         self.kd = 0.5
         self.c = 1
@@ -121,7 +121,7 @@ class SpaceCraft(object):
         f = np.zeros(3)
 
         if self.dist_switch:
-            m = W.dot(delta)
+            m = W.dot(delta(t))
         else:
             m = np.zeros(3)
 
@@ -184,10 +184,17 @@ class SpaceCraft(object):
             dB = np.zeros((3,num_con))
 
             for ii in range(num_con):
-                cur_con = con[:,ii]
-                cur_ang = con_angle[ii]
-                psi_avoid[ii] = -1 / alpha * np.log((np.cos(cur_ang)-np.inner(sen_inertial, cur_con))/ (1 + np.cos(cur_ang)))
-                dB[:,ii] = 1/alpha/( np.inner(sen_inertial, cur_con) - np.cos(cur_ang))*attitude.hat_map(R.T.dot(cur_con)).dot(sen)
+                if num_con == 1:
+                    cur_con = con
+                    cur_ang = con_angle
+
+                    psi_avoid[ii] =  -1 / alpha * np.log((np.cos(cur_ang)-np.inner(sen_inertial, cur_con))/ (1 + np.cos(cur_ang)))
+                    dB[:, ii] = 1/alpha/( np.inner(sen_inertial, cur_con) - np.cos(cur_ang))*attitude.hat_map(R.T.dot(cur_con)).dot(sen)
+                elif num_con > 1:
+                    cur_con = con[:,ii]
+                    cur_ang = con_angle[ii]
+                    psi_avoid[ii] = -1 / alpha * np.log((np.cos(cur_ang)-np.inner(sen_inertial, cur_con))/ (1 + np.cos(cur_ang)))
+                    dB[:,ii] = 1/alpha/( np.inner(sen_inertial, cur_con) - np.cos(cur_ang))*attitude.hat_map(R.T.dot(cur_con)).dot(sen)
 
             Psi = psi_attract * (np.sum(psi_avoid) + 1)
             err_att = dA * (np.sum(psi_avoid) + 1) + np.sum(dB * psi_attract, axis=1)
@@ -237,10 +244,14 @@ class SpaceCraft(object):
             (u_f, u_m, R_des, ang_vel_des, ang_vel_dot_des, Psi, err_att, err_vel) = self.controller(t, state)
 
             # compute the angle to each constraint
-            self.sen_inertial[ii, :] = state[0:9].reshape((3,3)).dot(self.sen).reshape((1,3))
+            self.sen_inertial[ii, :] = state[0:9].reshape((3,3), order='F').dot(self.sen).reshape((1,3))
             for jj in range(self.num_con):
-                c = self.con[:, jj]
-                self.ang_con[ii, jj] = 180/np.pi * np.arccos(np.dot(self.sen_inertial[ii,:], c))
+                if self.num_con == 1:
+                    c = self.con
+                    self.ang_con[ii,jj] = 180/np.pi * np.arccos(np.dot(self.sen_inertial[ii,:], c))
+                elif self.num_con > 1:
+                    c = self.con[:, jj]
+                    self.ang_con[ii, jj] = 180/np.pi * np.arccos(np.dot(self.sen_inertial[ii,:], c))
 
             self.u_f[ii, :] = u_f
             self.u_m[ii, :] = u_m
