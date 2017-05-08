@@ -13,7 +13,8 @@ class SpaceCraft(object):
             scenario='multiple', 
             dist_switch=False, 
             avoid_switch=False, 
-            adaptive_switch=False):
+            adaptive_switch=False,
+            time_varying_switch=False):
         """Initialize the model and it's properties
         """
         self.m_sc = 1
@@ -33,6 +34,8 @@ class SpaceCraft(object):
         self.dist_switch = dist_switch
         self.avoid_switch = avoid_switch
         self.adaptive_switch = adaptive_switch
+        self.time_varying_switch = time_varying_switch
+
         if scenario == 'multiple':
             self.con = np.array([[0.174, 0.4, -0.853, -0.122],
                             [-0.934, 0.7071, 0.436, -0.140],
@@ -49,7 +52,11 @@ class SpaceCraft(object):
 
         # Adaptive control paramters
         self.W = np.eye(3,3)
-        self.delta = lambda t: np.array([np.sin(9 * t), np.cos(9 * t), 1/2*(np.sin(9*t) + np.cos(9*t))])
+        if time_varying_switch:
+            self.delta = lambda t: np.array([np.sin(9 * t), np.cos(9 * t), 1/2*(np.sin(9*t) + np.cos(9*t))])
+        else:
+            self.delta = np.array([0.2, 0.2, 0.2])
+
         self.kd = 0.5
         self.c = 1
 
