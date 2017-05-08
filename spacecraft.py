@@ -2,7 +2,7 @@
 
 """
 import numpy as np
-from scipy import integrate
+from scipy import integrate, io
 import pdb
 from kinematics import attitude
 
@@ -10,45 +10,55 @@ class SpaceCraft(object):
 
     def __init__(
             self, 
-            scenario='multiple', 
+            scenario_switch='multiple', 
             dist_switch=False, 
             avoid_switch=False, 
             adaptive_switch=False,
-            time_varying_switch=False):
+            time_varying_switch=False,
+            experiment_switch=False):
         """Initialize the model and it's properties
         """
+        # logic to change the constraints 
+        self.scenario = scenario_switch
+        self.dist_switch = dist_switch
+        self.avoid_switch = avoid_switch
+        self.adaptive_switch = adaptive_switch
+        self.time_varying_switch = time_varying_switch
+        self.experiment_switch = experiment_switch
+
         self.m_sc = 1
         self.J = np.array( [[55710.50413e-7, 617.6577e-7, -250.2846e-7],
                        [617.6577e-7, 55757.4605e-7, 100.6760e-7],
                        [-250.2846e-7, 100.6760e-7, 105053.7595e-7]])
         
         self.G = np.diag([0.9, 1.0, 1.1])
+        if self.experiment_switch:
+            self.kp = 0.4
+            self.kv = 0.7
 
-        self.kp = 0.4
-        self.kv = 0.296
+            self.scenario = 'single' 
+        else:
+            self.kp = 0.4
+            self.kv = 0.296
         
         self.sen = np.array([1, 0, 0])
 
-        # logic to change the constraints 
-        self.scenario = scenario
-        self.dist_switch = dist_switch
-        self.avoid_switch = avoid_switch
-        self.adaptive_switch = adaptive_switch
-        self.time_varying_switch = time_varying_switch
-
-        if scenario == 'multiple':
+        if self.scenario == 'multiple':
             self.con = np.array([[0.174, 0.4, -0.853, -0.122],
                             [-0.934, 0.7071, 0.436, -0.140],
                             [-0.034, 0.7071, -0.286, -0.983]])
             self.con_angle = np.array([40, 40, 40, 20])*np.pi/180
             self.num_con = self.con.shape[1]
-        elif scenario == 'single':
+        elif self.scenario == 'single':
             self.con = np.array([ 1/np.sqrt(2), 1/np.sqrt(2), 0])
             self.con_angle = 12 * np.pi/180
             self.num_con = 1
         self.con = self.con / np.linalg.norm(self.con, axis=0)
 
-        self.alpha = 15
+        if self.experiment_switch:
+            self.alpha = 8
+        else:
+            self.alpha = 15
 
         # Adaptive control paramters
         self.W = np.eye(3,3)
@@ -57,26 +67,35 @@ class SpaceCraft(object):
         else:
             self.delta = lambda t: np.array([0.2, 0.2, 0.2])
 
-        self.kd = 0.5
-        self.c = 1
+        if self.experiment_switch:
+            self.delta = lambda t: np.array([0.06, 0.06, 0.09])
+            self.kd = 0.05
+            self.c = 0.1
+        else:
+            self.kd = 0.5
+            self.c = 1
 
         # desired/initial conditions
         self.q0 = np.array([-0.188, -0.735, -0.450, -0.471]) 
         self.qd = np.array([0, 0, 0, 1])
 
-        if scenario == 'multiple':
+        if self.scenario == 'multiple':
             self.R0 = attitude.rot1(0).dot(attitude.rot3(225 * np.pi/180))
             self.Rd = np.eye(3,3)
-        elif scenario == 'single':
+        elif self.scenario == 'single':
             self.R0 = attitude.rot1(0).dot(attitude.rot3(0))
             self.Rd = attitude.rot3(90*np.pi/180)
+
+        if self.experiment_switch:
+            self.R0 = attitude.rot1(0).dot(attitude.rot3(90*np.pi/180))
+            self.Rd = np.eye(3,3)
 
         # define the initial state
         self.w0 = np.zeros(3)
         self.delta_est0 = np.zeros(3)
         self.initial_state = np.hstack((self.R0.reshape(9, order='F'), self.w0, self.delta_est0))
 
-        self.tspan = np.linspace(0, 20, 1e3)
+        self.tspan = np.linspace(0, 10, 1e3)
 
     def dynamics(self, state, t):
         """EOMs for the attitude dynamics of a rigid body
@@ -263,6 +282,51 @@ class SpaceCraft(object):
             self.err_vel[ii, :] = err_vel
 
         return 0
+    
+    def load_experiment(self):
+        """Load the experimental data only if flag is set correctly
 
+        """
+        if not self.experiment_switch:
+            print("Experiment flag not TRUE")
+            return 1
 
+        data = io.loadmat('experiment/20150924_avoid3.mat')
 
+        Psi = np.squeeze(data['Psi'])
+        R_b2i = data['R_b2i']
+        R_des = data['R_des']
+        ang_vel = data['ang_vel'].T
+        err_att = data['err_att'].T
+        err_vel = data['err_vel'].T
+        u_m = data['u_m'].T
+        time = np.squeeze(data['t'])
+        
+        # generate some dummy data to match the integrate funciton above
+        state = np.zeros((time.shape[0], 15))
+        delta_est = np.zeros((time.shape[0], 3))
+        u_f = np.zeros_like(u_m)
+        ang_vel_des = np.zeros_like(ang_vel)
+        ang_vel_des_dot = np.zeros_like(ang_vel)
+
+        self.sen_inertial = np.zeros_like(u_f)
+        self.ang_con = np.zeros((time.shape[0], self.num_con))
+        for ii in range(time.shape[0]):
+            # save the state
+            state[ii, :] = np.hstack((R_b2i[:, :, ii].reshape(9, order='F'), ang_vel[ii,:], delta_est[ii, :]))
+            self.sen_inertial[ii, :] = R_b2i[:, :, ii].dot(self.sen).reshape((1,3))
+            c = self.con
+            self.ang_con[ii,0] = 180/np.pi * np.arccos(np.dot(self.sen_inertial[ii,:], c))
+
+        self.Psi = Psi
+        self.state = state
+        self.time = time
+        self.R_des = R_des
+        self.err_att = err_att
+        self.err_vel = err_vel
+        self.u_m = u_m
+        self.u_f = u_f
+        self.ang_vel_des = ang_vel_des
+        self.ang_vel_des_dot = ang_vel_des_dot
+
+        return 0
