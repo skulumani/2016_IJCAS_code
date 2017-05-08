@@ -74,7 +74,7 @@ class SpaceCraft(object):
         # define the initial state
         self.w0 = np.zeros(3)
         self.delta_est0 = np.zeros(3)
-        self.initial_state = np.hstack((self.R0.reshape(9), self.w0, self.delta_est0))
+        self.initial_state = np.hstack((self.R0.reshape(9, order='F'), self.w0, self.delta_est0))
 
         self.tspan = np.linspace(0, 20, 1e3)
 
@@ -87,7 +87,7 @@ class SpaceCraft(object):
         kd = self.kd
         W = self.W
 
-        R = state[0:9].reshape((3,3))
+        R = state[0:9].reshape((3,3), order='F')
         ang_vel = state[9:12]
         delta_est = state[12:15]
 
@@ -96,13 +96,12 @@ class SpaceCraft(object):
 
         # compute control input
         (_, u_m, _, _, _, _, err_att, err_vel) = self.controller(t, state)
-
         # differential equations
         R_dot = R.dot(attitude.hat_map(ang_vel))
         ang_vel_dot = np.linalg.inv(J).dot(m + u_m - attitude.hat_map(ang_vel).dot(J.dot(ang_vel)))
         theta_est_dot = kd * W.T.dot(err_vel + self.c * err_att)
 
-        state_dot = np.hstack((R_dot.reshape(9), ang_vel_dot, theta_est_dot))
+        state_dot = np.hstack((R_dot.reshape(9, order='F'), ang_vel_dot, theta_est_dot))
         
         return state_dot
     def ext_force_moment(self, t, state):
@@ -156,7 +155,7 @@ class SpaceCraft(object):
     def controller(self, t, state):
         """Controller for SO(3) avoidance
         """
-        R = state[0:9].reshape((3,3))
+        R = state[0:9].reshape((3,3), order='F')
         ang_vel = state[9:12]
         delta_est = state[12:15]
 
@@ -182,13 +181,13 @@ class SpaceCraft(object):
             sen_inertial = R.dot(sen)
 
             psi_avoid = np.zeros(self.num_con)
-            dB = np.zeros(3,num_con)
+            dB = np.zeros((3,num_con))
 
             for ii in range(num_con):
-                c = np.squeeze(con[:,ii])
-                a = con_angle[ii]
-                psi_avoid[ii] = -1 / alpha * np.log((np.cos(a)-np.inner(sen_inertial, c))/ (1 + np.cos(a)))
-                dB[ii] = 1/alpha/( np.inner(sen_inertial, c) - np.cos(a)*attitude.hat_map(R.T.dot(c)).dot(sen))
+                cur_con = con[:,ii]
+                cur_ang = con_angle[ii]
+                psi_avoid[ii] = -1 / alpha * np.log((np.cos(cur_ang)-np.inner(sen_inertial, cur_con))/ (1 + np.cos(cur_ang)))
+                dB[:,ii] = 1/alpha/( np.inner(sen_inertial, cur_con) - np.cos(cur_ang))*attitude.hat_map(R.T.dot(cur_con)).dot(sen)
 
             Psi = psi_attract * (np.sum(psi_avoid) + 1)
             err_att = dA * (np.sum(psi_avoid) + 1) + np.sum(dB * psi_attract, axis=1)
