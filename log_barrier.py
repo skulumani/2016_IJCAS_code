@@ -9,7 +9,7 @@ from kinematics import attitude
 # define LaTeX figure properties 
 
 def figsize(scale):
-    fig_width_pt = 469.75502                         # Get this from LaTeX using \the\textwidth
+    fig_width_pt = 483.0# Get this from LaTeX using \the\textwidth
     inches_per_pt = 1.0/72.27                       # Convert pt to inch
     golden_mean = (np.sqrt(5.0)-1.0)/2.0            # Aesthetic ratio (you could change this)
     fig_width = fig_width_pt*inches_per_pt*scale    # width in inches
@@ -18,8 +18,8 @@ def figsize(scale):
     return fig_size
 
 def scale_figsize(wscale, hscale):
-    fig_width_pt = 469.75502
-    fig_height_pt = 650.43001
+    fig_width_pt = 483.0
+    fig_height_pt = 682.0
     inches_per_pt = 1 / 72.27
     fig_width = fig_width_pt * inches_per_pt * wscale
     fig_height = fig_height_pt * inches_per_pt * hscale
@@ -39,7 +39,6 @@ pgf_with_latex = {                      # setup matplotlib to use latex for outp
         "xtick.labelsize": 8,
         "ytick.labelsize": 8,
         "figure.figsize": figsize(0.9),     # default fig size of 0.9 textwidth
-        "figure.autolayout": True,
         "pgf.preamble": [
             r"\usepackage[utf8x]{inputenc}",    # use utf8 fonts becasue your computer can handle it :)
             r"\usepackage[T1]{fontenc}",        # plots will be generated using this preamble
