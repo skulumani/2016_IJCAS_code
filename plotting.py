@@ -11,7 +11,7 @@ from matplotlib import colors, animation, cm
 # parse out the simulation results and recompute the error functions for 
 
 def figsize(scale):
-    fig_width_pt = 469.75502                         # Get this from LaTeX using \the\textwidth
+    fig_width_pt = 483.0                            # Get this from LaTeX using \the\textwidth
     inches_per_pt = 1.0/72.27                       # Convert pt to inch
     golden_mean = (np.sqrt(5.0)-1.0)/2.0            # Aesthetic ratio (you could change this)
     fig_width = fig_width_pt*inches_per_pt*scale    # width in inches
@@ -20,8 +20,8 @@ def figsize(scale):
     return fig_size
 
 def scale_figsize(wscale, hscale):
-    fig_width_pt = 469.75502
-    fig_height_pt = 650.43001
+    fig_width_pt = 483.0
+    fig_height_pt = 682.0
     inches_per_pt = 1 / 72.27
     fig_width = fig_width_pt * inches_per_pt * wscale
     fig_height = fig_height_pt * inches_per_pt * hscale
@@ -35,11 +35,11 @@ pgf_with_latex = {                      # setup matplotlib to use latex for outp
         "font.serif": [],                   # blank entries should cause plots to inherit fonts from the document
         "font.sans-serif": [],
         "font.monospace": [],
-        "axes.labelsize": 10,               # LaTeX default is 10pt font.
-        "font.size": 10,
-        "legend.fontsize": 10,               # Make the legend/label fonts a little smaller
-        "xtick.labelsize": 10,
-        "ytick.labelsize": 10,
+        "axes.labelsize": 8,               # LaTeX default is 10pt font.
+        "font.size": 8,
+        "legend.fontsize": 8,               # Make the legend/label fonts a little smaller
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
         "figure.figsize": figsize(0.9),     # default fig size of 0.9 textwidth
         "figure.autolayout": True,
         "pgf.preamble": [
@@ -54,7 +54,7 @@ sns.set_style('whitegrid', pgf_with_latex)
 sns.color_palette('pastel')
 time_label = r'$t (sec)$'
 
-def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
+def plot_outputs(sc, fname_suffix='', wscale=1, pgf_save=False):
     """Given a simulated rigid body instantiation this will plot all the outputs
     
     Parameters:
@@ -81,6 +81,7 @@ def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
                      linestyle='--')
     er_axarr[2].set_ylabel(r'$e_{R_3}$')
     er_axarr[2].set_xlabel(time_label)
+    plt.tight_layout()
 
     # plot configuration error function \Psi
     psi_fig, psi_ax = plt.subplots(1, 1, figsize=figsize(wscale))
@@ -88,6 +89,7 @@ def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
     psi_ax.plot(sc.time, np.zeros_like(sc.Psi), linewidth=2.5, linestyle='--', label='Desired')
     psi_ax.set_xlabel(time_label)
     psi_ax.set_ylabel(r'$\Psi$')
+    plt.tight_layout()
 
     # angular velocity error e_\Omega
     ew_fig, ew_axarr = plt.subplots(3, 1, sharex=True, figsize=figsize(wscale))
@@ -104,6 +106,7 @@ def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
                      linewidth=2.5, linestyle='--', label='Desired')
     ew_axarr[2].set_ylabel(r'$e_{\Omega_3}$')
     ew_axarr[2].set_xlabel(time_label)
+    plt.tight_layout()
 
     # plot the control input
     u_fig, u_axarr = plt.subplots(3, 1, sharex=True, figsize=figsize(wscale))
@@ -114,6 +117,7 @@ def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
     u_axarr[2].plot(sc.time, sc.u_m[:, 2], linewidth=2.5)
     u_axarr[2].set_ylabel(r'$u_3$')
     u_axarr[2].set_xlabel(time_label)
+    plt.tight_layout()
 
     # angular velocities
     w_fig, w_axarr = plt.subplots(3, 1, sharex=True, figsize=figsize(wscale))
@@ -126,6 +130,7 @@ def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
     w_axarr[2].plot(sc.time, sc.state[:, 11],label=r'Actual', linewidth=2.5)
     w_axarr[2].plot(sc.time, sc.ang_vel_des[:, 2], label=r'Desired', linewidth=2.5)
     w_axarr[2].set_ylabel(r'$\Omega_3$')
+    plt.tight_layout()
 
     # disturbance estimates
     delta_actual = np.zeros_like(sc.state[:,12:15])
@@ -146,13 +151,13 @@ def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
                        linestyle='--', label='Actual')
     dist_axarr[2].set_ylabel(r'$\bar \Delta_3$')
     dist_axarr[2].set_xlabel(time_label)
-
+    plt.tight_layout()
     # angle to each constraint
     ang_con_fig, ang_con_axarr = plt.subplots(1, 1, figsize=figsize(wscale))
     ang_con_axarr.plot(sc.time, sc.ang_con, linewidth=2.5)
     ang_con_axarr.set_xlabel(time_label)
     ang_con_axarr.set_ylabel(r'$\arccos (r^T R^T v_i)$')
-
+    plt.tight_layout()
     # save the figures as pgf if the flag is set
     if pgf_save:
         fig_handles = (er_fig, psi_fig, ew_fig, u_fig, w_fig, dist_fig, ang_con_fig)
@@ -160,8 +165,8 @@ def plot_outputs(sc, fname='', wscale=1, pgf_save=False):
 
         for fig, fname in zip(fig_handles, fig_fnames):
             plt.figure(fig.number)
-            plt.savefig(fname + fname + '.pgf')
-            plt.savefig(fname + fname + '.pdf')
+            plt.savefig(fname + '_' + fname_suffix + '.pgf')
+            plt.savefig(fname + '_' + fname_suffix + '.pdf')
 
     plt.show()
 
