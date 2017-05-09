@@ -166,7 +166,7 @@ def plot_outputs(sc, fname_suffix='', wscale=1, pgf_save=False):
         for fig, fname in zip(fig_handles, fig_fnames):
             plt.figure(fig.number)
             plt.savefig(fname + '_' + fname_suffix + '.pgf')
-            plt.savefig(fname + '_' + fname_suffix + '.pdf')
+            plt.savefig(fname + '_' + fname_suffix + '.eps', dpi=1200)
 
     plt.show()
 
