@@ -27,7 +27,7 @@ sc_timevarying = spacecraft.SpaceCraft(
                         dist_switch=True,
                         time_varying_switch=True,
                         adaptive_switch=True)
-
+# experimental results
 sc_experiment = spacecraft.SpaceCraft(
                         scenario_switch='single',
                         avoid_switch=True,
@@ -37,4 +37,15 @@ sc_experiment = spacecraft.SpaceCraft(
                         experiment_switch=True)
 # now integrate and plot them all
 sc_noadapt.integrate(10)
-# plotting.plot_outputs(sc_noadapt)
+sc_adapt.integrate(10)
+sc_timevarying.integrate(10)
+sc_experiment.load_experiment()
+# now plot everything all awesome like
+input('<Enter> to Plot no adaptive control')
+plotting.plot_outputs(sc_noadapt, fname='noadapt')
+input('<Enter> to Plot adaptive control')
+plotting.plot_outputs(sc_adapt, fname='adapt')
+input('<Enter> to Plot time varying disturbance')
+plotting.plot_outputs(sc_timevarying, fname='timevarying')
+input('<Enter> to Plot experimental data')
+plotting.plot_outputs(sc_experiment, fname='exp')
