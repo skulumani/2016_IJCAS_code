@@ -50,10 +50,10 @@ pgf_with_latex = {                      # setup matplotlib to use latex for outp
         }
 
 matplotlib.rcParams.update(pgf_with_latex)
-sns.set_style('white', pgf_with_latex)
+sns.set_style('whitegrid', pgf_with_latex)
 sns.color_palette('bright')
 time_label = r'$t$ (sec)'
-linewidth=2
+linewidth=1
 def plot_outputs(sc, fname_suffix='', wscale=1, hscale=0.75, pgf_save=False):
     """Given a simulated rigid body instantiation this will plot all the outputs
     
