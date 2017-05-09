@@ -50,11 +50,11 @@ pgf_with_latex = {                      # setup matplotlib to use latex for outp
         }
 
 matplotlib.rcParams.update(pgf_with_latex)
-sns.set_style('whitegrid', pgf_with_latex)
-sns.color_palette('pastel')
-time_label = r'$t (sec)$'
-
-def plot_outputs(sc, fname_suffix='', wscale=1, pgf_save=False):
+sns.set_style('white', pgf_with_latex)
+sns.color_palette('bright')
+time_label = r'$t$ (sec)'
+linewidth=2
+def plot_outputs(sc, fname_suffix='', wscale=1, hscale=0.75, pgf_save=False):
     """Given a simulated rigid body instantiation this will plot all the outputs
     
     Parameters:
@@ -64,71 +64,71 @@ def plot_outputs(sc, fname_suffix='', wscale=1, pgf_save=False):
 
     """
     # plot eR components
-    er_fig, er_axarr = plt.subplots(3,1, sharex=True, figsize=figsize(wscale))
-    er_axarr[0].plot(sc.time, sc.err_att[:,0], linewidth=2.5, label='Actual',
+    er_fig, er_axarr = plt.subplots(3,1, sharex=True, figsize=scale_figsize(wscale, hscale))
+    er_axarr[0].plot(sc.time, sc.err_att[:,0], linewidth=linewidth, label='Actual',
                       linestyle='-')
-    er_axarr[0].plot(sc.time, np.zeros_like(sc.err_att[:,0]), linewidth=2.5, label='Desired',
+    er_axarr[0].plot(sc.time, np.zeros_like(sc.err_att[:,0]), linewidth=linewidth, label='Desired',
                      linestyle='--')
     er_axarr[0].set_ylabel(r'$e_{R_1}$')
-    er_axarr[1].plot(sc.time, sc.err_att[:,1], linewidth=2.5, label='Actual',
+    er_axarr[1].plot(sc.time, sc.err_att[:,1], linewidth=linewidth, label='Actual',
                       linestyle='-')
-    er_axarr[1].plot(sc.time, np.zeros_like(sc.err_att[:,1]), linewidth=2.5, label='Desired',
+    er_axarr[1].plot(sc.time, np.zeros_like(sc.err_att[:,1]), linewidth=linewidth, label='Desired',
                      linestyle='--')
     er_axarr[1].set_ylabel(r'$e_{R_2}$')
-    er_axarr[2].plot(sc.time, sc.err_att[:,2], linewidth=2.5, label='Actual',
+    er_axarr[2].plot(sc.time, sc.err_att[:,2], linewidth=linewidth, label='Actual',
                       linestyle='-')
-    er_axarr[2].plot(sc.time, np.zeros_like(sc.err_att[:,2]), linewidth=2.5, label='Desired',
+    er_axarr[2].plot(sc.time, np.zeros_like(sc.err_att[:,2]), linewidth=linewidth, label='Desired',
                      linestyle='--')
     er_axarr[2].set_ylabel(r'$e_{R_3}$')
     er_axarr[2].set_xlabel(time_label)
     plt.tight_layout()
 
     # plot configuration error function \Psi
-    psi_fig, psi_ax = plt.subplots(1, 1, figsize=figsize(wscale))
-    psi_ax.plot(sc.time, sc.Psi, linewidth=2.5, linestyle='-', label='Actual')
-    psi_ax.plot(sc.time, np.zeros_like(sc.Psi), linewidth=2.5, linestyle='--', label='Desired')
+    psi_fig, psi_ax = plt.subplots(1, 1, figsize=scale_figsize(wscale, hscale))
+    psi_ax.plot(sc.time, sc.Psi, linewidth=linewidth, linestyle='-', label='Actual')
+    psi_ax.plot(sc.time, np.zeros_like(sc.Psi), linewidth=linewidth, linestyle='--', label='Desired')
     psi_ax.set_xlabel(time_label)
     psi_ax.set_ylabel(r'$\Psi$')
     plt.tight_layout()
 
     # angular velocity error e_\Omega
-    ew_fig, ew_axarr = plt.subplots(3, 1, sharex=True, figsize=figsize(wscale))
-    ew_axarr[0].plot(sc.time, sc.err_vel[:, 0], linewidth=2.5, linestyle='-', label='Actual')
+    ew_fig, ew_axarr = plt.subplots(3, 1, sharex=True, figsize=scale_figsize(wscale, hscale))
+    ew_axarr[0].plot(sc.time, sc.err_vel[:, 0], linewidth=linewidth, linestyle='-', label='Actual')
     ew_axarr[0].plot(sc.time, np.zeros_like(sc.err_vel[:, 0]),
-                     linewidth=2.5, linestyle='--', label='Desired')
+                     linewidth=linewidth, linestyle='--', label='Desired')
     ew_axarr[0].set_ylabel(r'$e_{\Omega_1}$')
-    ew_axarr[1].plot(sc.time, sc.err_vel[:, 1], linewidth=2.5, linestyle='-', label='Actual')
+    ew_axarr[1].plot(sc.time, sc.err_vel[:, 1], linewidth=linewidth, linestyle='-', label='Actual')
     ew_axarr[1].plot(sc.time, np.zeros_like(sc.err_vel[:, 1]),
-                     linewidth=2.5, linestyle='--', label='Desired')
+                     linewidth=linewidth, linestyle='--', label='Desired')
     ew_axarr[1].set_ylabel(r'$e_{\Omega_2}$')
-    ew_axarr[2].plot(sc.time, sc.err_vel[:, 2], linewidth=2.5, linestyle='-', label='Actual')
+    ew_axarr[2].plot(sc.time, sc.err_vel[:, 2], linewidth=linewidth, linestyle='-', label='Actual')
     ew_axarr[2].plot(sc.time, np.zeros_like(sc.err_vel[:, 2]),
-                     linewidth=2.5, linestyle='--', label='Desired')
+                     linewidth=linewidth, linestyle='--', label='Desired')
     ew_axarr[2].set_ylabel(r'$e_{\Omega_3}$')
     ew_axarr[2].set_xlabel(time_label)
     plt.tight_layout()
 
     # plot the control input
-    u_fig, u_axarr = plt.subplots(3, 1, sharex=True, figsize=figsize(wscale))
-    u_axarr[0].plot(sc.time, sc.u_m[:, 0], linewidth=2.5)
+    u_fig, u_axarr = plt.subplots(3, 1, sharex=True, figsize=scale_figsize(wscale, hscale))
+    u_axarr[0].plot(sc.time, sc.u_m[:, 0], linewidth=linewidth)
     u_axarr[0].set_ylabel(r'$u_1$')
-    u_axarr[1].plot(sc.time, sc.u_m[:, 1], linewidth=2.5)
+    u_axarr[1].plot(sc.time, sc.u_m[:, 1], linewidth=linewidth)
     u_axarr[1].set_ylabel(r'$u_2$')
-    u_axarr[2].plot(sc.time, sc.u_m[:, 2], linewidth=2.5)
+    u_axarr[2].plot(sc.time, sc.u_m[:, 2], linewidth=linewidth)
     u_axarr[2].set_ylabel(r'$u_3$')
     u_axarr[2].set_xlabel(time_label)
     plt.tight_layout()
 
     # angular velocities
-    w_fig, w_axarr = plt.subplots(3, 1, sharex=True, figsize=figsize(wscale))
-    w_axarr[0].plot(sc.time, sc.state[:, 9],label=r'Actual', linewidth=2.5)
-    w_axarr[0].plot(sc.time, sc.ang_vel_des[:, 0], label=r'Desired', linewidth=2.5)
+    w_fig, w_axarr = plt.subplots(3, 1, sharex=True, figsize=scale_figsize(wscale, hscale))
+    w_axarr[0].plot(sc.time, sc.state[:, 9],label=r'Actual', linewidth=linewidth)
+    w_axarr[0].plot(sc.time, sc.ang_vel_des[:, 0], label=r'Desired', linewidth=linewidth)
     w_axarr[0].set_ylabel(r'$\Omega_1$')
-    w_axarr[1].plot(sc.time, sc.state[:, 10],label=r'Actual', linewidth=2.5)
-    w_axarr[1].plot(sc.time, sc.ang_vel_des[:, 1], label=r'Desired', linewidth=2.5)
+    w_axarr[1].plot(sc.time, sc.state[:, 10],label=r'Actual', linewidth=linewidth)
+    w_axarr[1].plot(sc.time, sc.ang_vel_des[:, 1], label=r'Desired', linewidth=linewidth)
     w_axarr[1].set_ylabel(r'$\Omega_2$')
-    w_axarr[2].plot(sc.time, sc.state[:, 11],label=r'Actual', linewidth=2.5)
-    w_axarr[2].plot(sc.time, sc.ang_vel_des[:, 2], label=r'Desired', linewidth=2.5)
+    w_axarr[2].plot(sc.time, sc.state[:, 11],label=r'Actual', linewidth=linewidth)
+    w_axarr[2].plot(sc.time, sc.ang_vel_des[:, 2], label=r'Desired', linewidth=linewidth)
     w_axarr[2].set_ylabel(r'$\Omega_3$')
     plt.tight_layout()
 
@@ -137,24 +137,25 @@ def plot_outputs(sc, fname_suffix='', wscale=1, pgf_save=False):
     for ii,t in enumerate(sc.time):
         delta_actual[ii, :] = sc.delta(t)
 
-    dist_fig, dist_axarr = plt.subplots(3, 1, figsize=figsize(wscale), sharex=True)
-    dist_axarr[0].plot(sc.time, sc.state[:,12], linewidth=2.5, linestyle='-', label='Estimate')
-    dist_axarr[0].plot(sc.time, delta_actual[:,0], linewidth=2.5,
+    dist_fig, dist_axarr = plt.subplots(3, 1, figsize=scale_figsize(wscale, hscale), sharex=True)
+    dist_axarr[0].plot(sc.time, sc.state[:,12], linewidth=linewidth, linestyle='-', label='Estimate')
+    dist_axarr[0].plot(sc.time, delta_actual[:,0], linewidth=linewidth,
                        linestyle='--', label='Actual')
     dist_axarr[0].set_ylabel(r'$\bar \Delta_1$')
-    dist_axarr[1].plot(sc.time, sc.state[:,13], linewidth=2.5, linestyle='-', label='Estimate')
-    dist_axarr[1].plot(sc.time, delta_actual[:,1], linewidth=2.5,
+    dist_axarr[1].plot(sc.time, sc.state[:,13], linewidth=linewidth, linestyle='-', label='Estimate')
+    dist_axarr[1].plot(sc.time, delta_actual[:,1], linewidth=linewidth,
                        linestyle='--', label='Actual')
     dist_axarr[1].set_ylabel(r'$\bar \Delta_2$')
-    dist_axarr[2].plot(sc.time, sc.state[:,14], linewidth=2.5, linestyle='-', label='Estimate')
-    dist_axarr[2].plot(sc.time, delta_actual[:, 2], linewidth=2.5,
+    dist_axarr[2].plot(sc.time, sc.state[:,14], linewidth=linewidth, linestyle='-', label='Estimate')
+    dist_axarr[2].plot(sc.time, delta_actual[:, 2], linewidth=linewidth,
                        linestyle='--', label='Actual')
     dist_axarr[2].set_ylabel(r'$\bar \Delta_3$')
     dist_axarr[2].set_xlabel(time_label)
     plt.tight_layout()
+
     # angle to each constraint
-    ang_con_fig, ang_con_axarr = plt.subplots(1, 1, figsize=figsize(wscale))
-    ang_con_axarr.plot(sc.time, sc.ang_con, linewidth=2.5)
+    ang_con_fig, ang_con_axarr = plt.subplots(1, 1, figsize=scale_figsize(wscale, hscale))
+    ang_con_axarr.plot(sc.time, sc.ang_con, linewidth=linewidth)
     ang_con_axarr.set_xlabel(time_label)
     ang_con_axarr.set_ylabel(r'$\arccos (r^T R^T v_i)$')
     plt.tight_layout()
