@@ -37,7 +37,7 @@ class TestSpaceCraftNoAdaptiveControl():
     """
 
     sc = spacecraft.SpaceCraft(
-            scenario='multiple',
+            scenario_switch='multiple',
             avoid_switch=True,
             dist_switch=True,
             adaptive_switch=False)
@@ -114,7 +114,7 @@ class TestSpaceCraftNoAdaptiveControl():
         np.testing.assert_array_almost_equal(self.sc.con, normalized_constraints)
 
     def test_delta_disturbance(self):
-        np.testing.assert_array_almost_equal(self.sc.delta, np.array([0.2, 0.2, 0.2]))
+        np.testing.assert_array_almost_equal(self.sc.delta(self.t_in), np.array([0.2, 0.2, 0.2]))
 
     def test_controller_known_uf(self):
         np.testing.assert_array_almost_equal(self.u_f_act, np.zeros(3))
