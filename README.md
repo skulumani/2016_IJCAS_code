@@ -1,36 +1,35 @@
-Matlab code for ACC paper
 
-## To regenerate the figures for publications
+## Regenerate figures for IJCAS paper
+This repository is used to generate the figures and data for the IJCAS submission titled
+"Constrained Geometric Attitude Control on SO(3)" which is located at one of the following repos:
 
-### Configuration Error Function visualization:
-The script `log_barrier.py` will regenerate the surface plots.
-The function `log_barrier.plot_error_function(fwidth=0.333, pgf_save=True)` can be used
-to scale the output figures and export them to PDF automatically.
+* [FDCL IJCAS Paper](https://github.com/fdcl-gwu/2016_IJCAS)
+* [Shankar IJCAS Paper](https://github.com/skulumani/2016_IJCAS)
 
-### Attitude Stabilization without adaptive update law:
-run coupled_control_driver.m and then run plot_outputs.m to generate the simulation
-plots used in both ACC/IJCAS submission
+Both repos should be equivalent but at times I'll forget to push to one or the other.
 
-This is using commit 3c428392a28a19de57c34fbe98816d4e6024d7ff
+## How to regenerate the data
 
-### Attitude Stabilization with adaptive update law:
-run coupled_control_driver.m and then run plot_outputs.m or draw_cad to generate
-the plots. There's a flag in load_constants to create animations or a video
+The code is written in both Matlab and Python. 
+Either will generate similar figures which are used in the manuscript. 
 
-Go to commit c44b078d2ad42443ac2875aa09a726a987e7af12 to ensure the constants 
-are setup properly
+To regenerate the data all one needs to do is:
 
-### Time varying disturbance simulation
-Go to commit `488f15b0ffab397877bb8aead46719811f5ea73b` and run coupled_control_driver.m
+~~~
+python generate_plots.py
+~~~
 
-This will generate a bunch of plots for the time varying disturbance case. 
+Which will accomplish the following:
 
-### Constrained Attitude stabilization experiment:
-Run Data_analysis.m to read 20150924_avoid3.txt to generate the experimental results
+1. Instantiate a `spacecraft` object for each of the examples given in the paper
+2. Simulate or read the experiemental data appropriately
+3. Plot the data using `matplotlib`
+4. Optionally save/write the figures to both PDF and PGF if desired by using the `-s` flag
 
-The repository holding the experimental data is located at
-https://github.com/skulumani/2016_ACC_Experiment
+## Modifying the figure size
 
-The commit is 2d4f9be86874f43b4166476fe01f73c216423682
+All of the plotting commands in `generate_plots.py` accepts an input for the figure size.
+This figure size is dependent on the size of the finish plot in a LaTeX document. 
+You can modify this to increase/decrease the sizes of the figures, which is especially important when using PGF/Tikz.
 
-This calls load_experiment_constants and plot_experiment_constants 
+
