@@ -8,6 +8,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib import colors, animation, cm
 
+import pdb
 # parse out the simulation results and recompute the error functions for 
 
 def figsize(scale):
@@ -163,7 +164,31 @@ def plot_outputs(sc, fname_suffix='', wscale=1, hscale=0.75, pgf_save=False):
     if pgf_save:
         fig_handles = (er_fig, psi_fig, ew_fig, u_fig, w_fig, dist_fig, ang_con_fig)
         fig_fnames = ('eR', 'Psi', 'eW', 'u', 'w', 'dist', 'ang_con')
+        
+        # save data to csv for pgfplots
+        if sc.ang_con.shape[1] == 4: 
+            data = np.stack((sc.time, sc.err_att[:, 0], sc.err_att[:, 1], sc.err_att[:, 2],
+                             sc.Psi, sc.err_vel[:, 0], sc.err_vel[:, 1], sc.err_vel[:, 2], 
+                             sc.u_m[:, 0], sc.u_m[:, 1], sc.u_m[:, 2],
+                             sc.state[:, 9], sc.state[:, 10], sc.state[:, 11],
+                             sc.ang_vel_des[:, 0], sc.ang_vel_des[:, 1], sc.ang_vel_des[:, 2],
+                             sc.state[:, 12], sc.state[:, 13], sc.state[:, 14],
+                             delta_actual[:, 0], delta_actual[:, 1], delta_actual[:, 2], 
+                             sc.ang_con[:, 0], sc.ang_con[:, 1], sc.ang_con[:, 2], sc.ang_con[:, 3]), axis=1)
+            header="TIME, eR_1, eR_2, eR_3, Psi, eW_1, eW_2, eW_3, u_1, u_2, u_3, W_1, W_2, W_3, Wd_1, Wd_2, Wd_3, D_1, D_1, D_1, D_true_1, D_true_2, D_true_3, ang_con_1, ang_con_2, ang_con_3, ang_con_4" 
+        elif sc.ang_con.shape[1] == 1:
+            data = np.stack((sc.time, sc.err_att[:, 0], sc.err_att[:, 1], sc.err_att[:, 2],
+                             sc.Psi, sc.err_vel[:, 0], sc.err_vel[:, 1], sc.err_vel[:, 2], 
+                             sc.u_m[:, 0], sc.u_m[:, 1], sc.u_m[:, 2],
+                             sc.state[:, 9], sc.state[:, 10], sc.state[:, 11],
+                             sc.ang_vel_des[:, 0], sc.ang_vel_des[:, 1], sc.ang_vel_des[:, 2],
+                             sc.state[:, 12], sc.state[:, 13], sc.state[:, 14],
+                             delta_actual[:, 0], delta_actual[:, 1], delta_actual[:, 2], 
+                             sc.ang_con[:, 0]), axis=1)
+            header="TIME, eR_1, eR_2, eR_3, Psi, eW_1, eW_2, eW_3, u_1, u_2, u_3, W_1, W_2, W_3, Wd_1, Wd_2, Wd_3, D_1, D_1, D_1, D_true_1, D_true_2, D_true_3, ang_con" 
 
+        np.savetxt(fname_suffix + '.csv', data, fmt="%5.3f", delimiter=",",
+                   header=header, comments="")
         for fig, fname in zip(fig_handles, fig_fnames):
             plt.figure(fig.number)
             plt.savefig(fname + '_' + fname_suffix + '.pgf')
