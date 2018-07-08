@@ -175,7 +175,7 @@ def plot_outputs(sc, fname_suffix='', wscale=1, hscale=0.75, pgf_save=False):
                              sc.state[:, 12], sc.state[:, 13], sc.state[:, 14],
                              delta_actual[:, 0], delta_actual[:, 1], delta_actual[:, 2], 
                              sc.ang_con[:, 0], sc.ang_con[:, 1], sc.ang_con[:, 2], sc.ang_con[:, 3]), axis=1)
-            header="TIME, eR_1, eR_2, eR_3, Psi, eW_1, eW_2, eW_3, u_1, u_2, u_3, W_1, W_2, W_3, Wd_1, Wd_2, Wd_3, D_1, D_1, D_1, D_true_1, D_true_2, D_true_3, ang_con_1, ang_con_2, ang_con_3, ang_con_4" 
+            header="TIME, eR_1, eR_2, eR_3, Psi, eW_1, eW_2, eW_3, u_1, u_2, u_3, W_1, W_2, W_3, Wd_1, Wd_2, Wd_3, D_1, D_2, D_3, D_true_1, D_true_2, D_true_3, ang_con_1, ang_con_2, ang_con_3, ang_con_4" 
         elif sc.ang_con.shape[1] == 1:
             data = np.stack((sc.time, sc.err_att[:, 0], sc.err_att[:, 1], sc.err_att[:, 2],
                              sc.Psi, sc.err_vel[:, 0], sc.err_vel[:, 1], sc.err_vel[:, 2], 
@@ -185,7 +185,7 @@ def plot_outputs(sc, fname_suffix='', wscale=1, hscale=0.75, pgf_save=False):
                              sc.state[:, 12], sc.state[:, 13], sc.state[:, 14],
                              delta_actual[:, 0], delta_actual[:, 1], delta_actual[:, 2], 
                              sc.ang_con[:, 0]), axis=1)
-            header="TIME, eR_1, eR_2, eR_3, Psi, eW_1, eW_2, eW_3, u_1, u_2, u_3, W_1, W_2, W_3, Wd_1, Wd_2, Wd_3, D_1, D_1, D_1, D_true_1, D_true_2, D_true_3, ang_con" 
+            header="TIME, eR_1, eR_2, eR_3, Psi, eW_1, eW_2, eW_3, u_1, u_2, u_3, W_1, W_2, W_3, Wd_1, Wd_2, Wd_3, D_1, D_2, D_3, D_true_1, D_true_2, D_true_3, ang_con" 
 
         np.savetxt(fname_suffix + '.csv', data, fmt="%5.3f", delimiter=",",
                    header=header, comments="")
