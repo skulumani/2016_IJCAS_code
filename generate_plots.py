@@ -47,19 +47,19 @@ def main(pgf_save=False):
     sc_experiment.load_experiment()
     # now plot everything all awesome like
     input('Press <Enter> to plot the configuration error function visualization')
-    log_barrier.plot_error_function(fwidth=0.4, pgf_save=pgf_save)
+    log_barrier.plot_error_function(fwidth=1, pgf_save=pgf_save)
 
     input('Press <Enter> to Plot no adaptive control')
-    plotting.plot_outputs(sc_noadapt, fname_suffix='noadapt', wscale=0.3333, hscale=0.2, pgf_save=pgf_save)
+    plotting.plot_outputs(sc_noadapt, fname_suffix='noadapt', wscale=1, hscale=0.2, pgf_save=pgf_save)
 
     input('Press <Enter> to Plot adaptive control')
-    plotting.plot_outputs(sc_adapt, fname_suffix='adapt', wscale=0.4, hscale=0.2, pgf_save=pgf_save)
+    plotting.plot_outputs(sc_adapt, fname_suffix='adapt', wscale=1, hscale=0.2, pgf_save=pgf_save)
 
     input('Press <Enter> to Plot time varying disturbance')
-    plotting.plot_outputs(sc_timevarying, fname_suffix='timevarying', wscale=0.3333, hscale=0.175, pgf_save=pgf_save)
+    plotting.plot_outputs(sc_timevarying, fname_suffix='timevarying', wscale=1, hscale=0.175, pgf_save=pgf_save)
 
     input('Press <Enter> to Plot experimental data')
-    plotting.plot_outputs(sc_experiment, fname_suffix='exp', wscale=0.3333, hscale=0.2, pgf_save=pgf_save)
+    plotting.plot_outputs(sc_experiment, fname_suffix='exp', wscale=1, hscale=0.2, pgf_save=pgf_save)
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate plots for IJCAS Paper titled: Constrained Geometric Attitude Control on SO(3)')
